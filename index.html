@@ -32,4 +32,240 @@ h1 { margin: 20px 0; }
 .active {
   background: gold;
   color: black;
-  font-weight: bold
+  font-weight: bold;
+}
+
+.turn {
+  margin-bottom: 15px;
+  font-size: 1.2em;
+}
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  max-width: 1100px;
+  margin: 0 auto 30px;
+  padding: 10px;
+}
+
+.category {
+  background: #003366;
+  padding: 15px;
+  font-weight: bold;
+}
+
+.tile {
+  background: #0055aa;
+  padding: 30px 0;
+  font-size: 1.5em;
+  cursor: pointer;
+}
+
+.tile:hover { background: #0077dd; }
+.tile.used { background: #111; cursor: default; }
+
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.9);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  padding: 20px;
+}
+
+button {
+  padding: 10px 20px;
+  margin: 10px;
+  font-size: 1em;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.correct { background: #28a745; color: white; }
+.wrong { background: #dc3545; color: white; }
+.close { background: #555; color: white; }
+
+.daily { color: gold; font-weight: bold; font-size: 1.4em; }
+</style>
+</head>
+
+<body>
+
+<h1>🏆 Family Jeopardy 🏆</h1>
+
+<div id="scoreboard">
+  <div id="teamA" class="team active">Team A: 0</div>
+  <div id="teamB" class="team">Team B: 0</div>
+</div>
+
+<div class="turn" id="turnIndicator">Current Turn: Team A</div>
+
+<div class="board" id="board"></div>
+
+<div class="modal" id="modal">
+  <h2 id="question"></h2>
+  <p id="answer" style="display:none;"></p>
+  <div id="buttons"></div>
+</div>
+
+<script>
+let teamAScore = 0;
+let teamBScore = 0;
+let currentTeam = "A";
+let dailyDoubleIndex = Math.floor(Math.random() * 25);
+
+const categories = [
+{
+name: "Science",
+questions: [
+{value:100, q:"What planet is known as the Red Planet?", a:"Mars"},
+{value:200, q:"What gas do plants absorb from the atmosphere?", a:"Carbon dioxide"},
+{value:300, q:"How many bones are in the adult human body?", a:"206"},
+{value:400, q:"What is the chemical symbol for gold?", a:"Au"},
+{value:500, q:"What force keeps us on the ground?", a:"Gravity"}
+]},
+{
+name: "Geography",
+questions: [
+{value:100, q:"What is the largest ocean on Earth?", a:"Pacific Ocean"},
+{value:200, q:"Which country has the Great Barrier Reef?", a:"Australia"},
+{value:300, q:"What is the capital of Japan?", a:"Tokyo"},
+{value:400, q:"Mount Everest is in which mountain range?", a:"Himalayas"},
+{value:500, q:"Which continent is the Sahara Desert located on?", a:"Africa"}
+]},
+{
+name: "History",
+questions: [
+{value:100, q:"Who was the first U.S. President?", a:"George Washington"},
+{value:200, q:"In which year did World War II end?", a:"1945"},
+{value:300, q:"Which civilization built the pyramids?", a:"Egyptians"},
+{value:400, q:"Who was the Maid of Orléans?", a:"Joan of Arc"},
+{value:500, q:"The Roman Empire fell in which century?", a:"5th century"}
+]},
+{
+name: "Entertainment",
+questions: [
+{value:100, q:"What movie features Olaf the snowman?", a:"Frozen"},
+{value:200, q:"Who wrote Harry Potter?", a:"J.K. Rowling"},
+{value:300, q:"Highest-grossing film (unadjusted)?", a:"Avatar"},
+{value:400, q:"Freddie Mercury was lead singer of?", a:"Queen"},
+{value:500, q:"Show with dragons & Iron Throne?", a:"Game of Thrones"}
+]},
+{
+name: "Sports",
+questions: [
+{value:100, q:"How many players on a soccer team?", a:"11"},
+{value:200, q:"Sport with a home run?", a:"Baseball"},
+{value:300, q:"2018 FIFA World Cup winner?", a:"France"},
+{value:400, q:"Sport using a shuttlecock?", a:"Badminton"},
+{value:500, q:"How many Olympic rings?", a:"5"}
+]}
+];
+
+const board = document.getElementById("board");
+
+categories.forEach(category => {
+const catDiv = document.createElement("div");
+catDiv.classList.add("category");
+catDiv.innerText = category.name;
+board.appendChild(catDiv);
+});
+
+let tileCounter = 0;
+
+for (let i = 0; i < 5; i++) {
+categories.forEach((category, catIndex) => {
+const tile = document.createElement("div");
+tile.classList.add("tile");
+tile.innerText = category.questions[i].value;
+tile.onclick = () => openQuestion(tile, catIndex, i, tileCounter);
+board.appendChild(tile);
+tileCounter++;
+});
+}
+
+function openQuestion(tile, catIndex, qIndex, tileIndex) {
+if (tile.classList.contains("used")) return;
+
+const modal = document.getElementById("modal");
+const question = document.getElementById("question");
+const answer = document.getElementById("answer");
+const buttons = document.getElementById("buttons");
+
+const qData = categories[catIndex].questions[qIndex];
+
+if (tileIndex === dailyDoubleIndex) {
+question.innerHTML = "<span class='daily'>✨ DAILY DOUBLE ✨</span><br><br>" + qData.q;
+} else {
+question.innerText = qData.q;
+}
+
+answer.innerText = "Answer: " + qData.a;
+answer.style.display = "none";
+
+buttons.innerHTML = `
+<button onclick="showAnswer()">Show Answer</button>
+<button class="correct" onclick="updateScore(${qData.value})">Correct</button>
+<button class="wrong" onclick="updateScore(-${qData.value})">Wrong</button>
+<button class="close" onclick="closeModal()">Close</button>
+`;
+
+modal.style.display = "flex";
+tile.classList.add("used");
+checkEndGame();
+}
+
+function updateScore(points) {
+if (currentTeam === "A") {
+teamAScore += points;
+} else {
+teamBScore += points;
+}
+
+document.getElementById("teamA").innerText = "Team A: " + teamAScore;
+document.getElementById("teamB").innerText = "Team B: " + teamBScore;
+
+switchTurn();
+closeModal();
+}
+
+function switchTurn() {
+currentTeam = currentTeam === "A" ? "B" : "A";
+document.getElementById("turnIndicator").innerText = "Current Turn: Team " + currentTeam;
+
+document.getElementById("teamA").classList.remove("active");
+document.getElementById("teamB").classList.remove("active");
+
+document.getElementById("team" + currentTeam).classList.add("active");
+}
+
+function showAnswer() {
+document.getElementById("answer").style.display = "block";
+}
+
+function closeModal() {
+document.getElementById("modal").style.display = "none";
+}
+
+function checkEndGame() {
+const usedTiles = document.querySelectorAll(".tile.used").length;
+if (usedTiles === 25) {
+setTimeout(() => {
+let winner = teamAScore > teamBScore ? "Team A Wins! 🎉" :
+teamBScore > teamAScore ? "Team B Wins! 🎉" :
+"It's a Tie! 🤝";
+alert("Game Over!\n\nTeam A: " + teamAScore +
+"\nTeam B: " + teamBScore +
+"\n\n" + winner);
+}, 500);
+}
+}
+</script>
+
+</body>
+</html>
+
