@@ -252,17 +252,24 @@ document.getElementById("modal").style.display = "none";
 }
 
 function checkEndGame() {
-const usedTiles = document.querySelectorAll(".tile.used").length;
-if (usedTiles === 25) {
-setTimeout(() => {
-let winner = teamAScore > teamBScore ? "Team A Wins! 🎉" :
-teamBScore > teamAScore ? "Team B Wins! 🎉" :
-"It's a Tie! 🤝";
-alert("Game Over!\n\nTeam A: " + teamAScore +
-"\nTeam B: " + teamBScore +
-"\n\n" + winner);
-}, 500);
-}
+  const usedTiles = document.querySelectorAll(".tile.used").length;
+  if (usedTiles === 25) {
+    setTimeout(() => {
+
+      let winner = teamAScore > teamBScore ? "Team A Wins! 🎉" :
+                   teamBScore > teamAScore ? "Team B Wins! 🎉" :
+                   "It's a Tie! 🤝";
+
+      alert(
+        "🏁 Game Over!\n\n" +
+        "Team A: " + teamAScore + "\n" +
+        "Team B: " + teamBScore + "\n\n" +
+        winner +
+        "\n\n👑 Tanay is the real winner. 👑"
+      );
+
+    }, 500);
+  }
 }
 </script>
 
